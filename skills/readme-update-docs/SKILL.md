@@ -42,6 +42,8 @@ docs/
 
 > [!NOTE]
 > The `docs/superpowers/` directory is used for internal build plans and must remain untouched. Do not relocate, modify, or delete any files inside this directory.
+> 
+> The `graphify-out/` directory contains the project's knowledge graph and must remain untouched. Do not relocate, modify, or delete any files inside it.
 
 ---
 
@@ -72,6 +74,8 @@ When auditing or creating documents, verify and document:
 1.  **Validate Code Examples:** All CLI commands, path directories, and config files mentioned must match the actual repository content.
 2.  **No Duplicate Content:** Consolidate overlapping sections and delete obsolete documents or dead links.
 3.  **Cross-Linking:** Use clean relative paths (e.g., `[deployment.md](deployment.md)`) for markdown linkages.
+4.  **Do Not Touch graphify-out:** Do not modify, relocate, or delete any files in the `graphify-out/` directory (the project's knowledge graph).
+
 
 ---
 
