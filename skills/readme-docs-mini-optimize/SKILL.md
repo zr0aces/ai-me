@@ -1,6 +1,7 @@
 ---
 name: readme-docs-mini-optimize
-description: Minimal, maintainable, professional repository documentation setup. Use this skill whenever the user wants to create, restructure, audit, or optimize repository documentation — including README, CHANGELOG, docs/ folder, GitHub templates, VERSION file, or AI-friendly repo files. Also trigger when the user asks "what docs should my repo have", "help me set up docs", "review my documentation structure", or wants a lean doc structure for a new or existing project.
+description: Minimal, maintainable, professional repository documentation setup. Manual trigger only — invoke only when user explicitly runs /readme-docs-mini-optimize or directly requests this skill by name.
+trigger: /readme-docs-mini-optimize
 ---
 
 # Minimal Repository Documentation

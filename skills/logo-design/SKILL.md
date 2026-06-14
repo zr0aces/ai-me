@@ -1,6 +1,6 @@
 ---
 name: logo-design
-description: "Guidelines and workflows for creating professional logos, generating visual assets programmatically (SVGs, multi-resolution favicons, PNGs) using Pillow, and integrating them consistently into web application themes."
+description: "Guidelines and workflows for creating professional logos, generating visual assets programmatically (SVGs, multi-resolution favicons, PNGs) using Pillow, and integrating them consistently into web application themes. Manual trigger only — invoke only when user explicitly runs /logo-design or requests this skill by name."
 trigger: /logo-design
 ---
 

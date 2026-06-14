@@ -1,6 +1,6 @@
 ---
 name: readme-docs-full
-description: Full comprehensive documentation structure for production-ready repositories. ONLY trigger when user explicitly calls /readme-docs-full or asks for "full docs", "complete documentation structure", or "production-ready docs". Do NOT auto-trigger — this is not a general docs helper.
+description: Full comprehensive documentation structure for production-ready repositories. Manual trigger only — invoke only when user explicitly runs /readme-docs-full or requests this skill by name.
 
 trigger: /readme-docs-full
 ---

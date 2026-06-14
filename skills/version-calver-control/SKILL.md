@@ -1,6 +1,6 @@
 ---
 name: version-calver-control
-description: Automated Calendar Versioning (CalVer YYYY.M.MINOR) system with a single source of truth, automated synchronization, and release verification.
+description: Automated Calendar Versioning (CalVer YYYY.M.MINOR) system with a single source of truth, automated synchronization, and release verification. Manual trigger only — invoke only when user explicitly runs /version-calver-control or requests this skill by name.
 trigger: /version-calver-control
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: date-display-format
-description: Date display standardization to `dd MMM yyyy` format (e.g., `06 Jun 2026`) with a shared formatting utility and client-server timezone synchronization.
+description: Date display standardization to `dd MMM yyyy` format (e.g., `06 Jun 2026`) with a shared formatting utility and client-server timezone synchronization. Manual trigger only — invoke only when user explicitly runs /date-display-format or requests this skill by name.
 
 trigger: /date-display-format
 ---
