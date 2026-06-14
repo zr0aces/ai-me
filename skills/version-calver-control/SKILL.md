@@ -29,6 +29,38 @@ To prevent version drift, establish a single central file at the root of the rep
 
 ---
 
+## 📄 2a. VERSION File Bootstrap
+
+**Always check for VERSION file before any versioning work.**
+
+```bash
+cat VERSION 2>/dev/null || echo "NOT FOUND"
+```
+
+**If VERSION does not exist:**
+
+1. Check for existing version strings in the repo:
+   ```bash
+   grep -r "version" pyproject.toml package.json setup.cfg setup.py 2>/dev/null | head -10
+   ```
+2. If version found → parse it, convert to CalVer format `YYYY.M.1`
+3. If no version found → use current date: `YYYY.M.1` (e.g., `2026.6.1`)
+4. Create the file:
+   ```bash
+   echo "2026.6.1" > VERSION
+   ```
+5. Commit: `chore: add VERSION file (CalVer YYYY.M.MINOR)`
+
+**If VERSION exists:**
+
+1. Read current value
+2. Validate format matches `YYYY.M.MINOR` — fix if malformed
+3. Proceed with sync or bump as requested
+
+**Never skip this check.** All downstream scripts depend on VERSION existing.
+
+---
+
 ## 🛠️ 3. Automated Scripts
 
 Implement the following automated scripts in the `scripts/` directory to manage versioning and deployments:
