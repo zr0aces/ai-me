@@ -101,18 +101,41 @@ png_icons[192].save(os.path.join(PUBLIC_DIR, "web-app-manifest-192x192.png"), "P
 png_icons[512].save(os.path.join(PUBLIC_DIR, "web-app-manifest-512x512.png"), "PNG", optimize=True)
 
 # Save multi-resolution favicon.ico
-# sizes tuple must match order: base image first (16), then append_images in order (32, 48)
-png_icons[16].save(
+# PIL ICO encoder requires: base image = smallest size (16px), append_images in
+# ascending size order. The sizes= list must match [base] + append_images exactly.
+ico_16 = png_icons[16]
+ico_32 = png_icons[32]
+ico_48 = png_icons[48]
+ico_16.save(
     os.path.join(PUBLIC_DIR, "favicon.ico"),
     format="ICO",
-    sizes=[(16, 16), (32, 32), (48, 48)],
-    append_images=[png_icons[32], png_icons[48]]  # order must match sizes tuple
+    sizes=[(16, 16), (32, 32), (48, 48)],   # must match order below
+    append_images=[ico_32, ico_48]            # 32 first, then 48
 )
 
-# 5. GENERATE FULL LOGO WITH TEXT
-# Create a wider canvas (e.g. 7680x2048 at 4x), paste the resized mask, and draw text
-# text_font = ImageFont.truetype("Path/To/Font.ttf", size)
-# draw.text((x, y), "AppName", fill=BRAND_DARK, font=text_font)
+# 5. GENERATE MONOCHROME VARIANTS (black and white)
+# Black: composite icon on black fill
+black_img = Image.new('RGBA', (2048, 2048), BRAND_DARK)
+icon_black = Image.new('RGBA', (2048, 2048), TRANSPARENT)
+icon_black.paste(black_img, (0, 0), mask)
+icon_black_512 = icon_black.resize((512, 512), Image.Resampling.LANCZOS)
+icon_black_512.save(os.path.join(PUBLIC_DIR, "logo-monochrome-black.png"), "PNG", optimize=True)
+
+# White: composite icon on white fill
+white_img = Image.new('RGBA', (2048, 2048), BRAND_LIGHT)
+icon_white = Image.new('RGBA', (2048, 2048), TRANSPARENT)
+icon_white.paste(white_img, (0, 0), mask)
+icon_white_512 = icon_white.resize((512, 512), Image.Resampling.LANCZOS)
+icon_white_512.save(os.path.join(PUBLIC_DIR, "logo-monochrome-white.png"), "PNG", optimize=True)
+
+# 6. GENERATE FULL LOGO WITH TEXT
+# Fonts: download from Google Fonts (https://fonts.google.com) or use system font.
+# Recommended: Inter Bold or Prompt SemiBold. Save .ttf to project root or scripts/.
+# text_font = ImageFont.truetype("scripts/Inter-Bold.ttf", size=200)
+# logo_canvas = Image.new('RGBA', (7680, 2048), TRANSPARENT)
+# logo_canvas.paste(icon_canvas.resize((2048, 2048)), (0, 0))
+# logo_draw = ImageDraw.Draw(logo_canvas)
+# logo_draw.text((2200, 600), "AppName", fill=BRAND_DARK, font=text_font)
 ```
 
 ---
@@ -134,7 +157,7 @@ After generating the assets, integrate them system-wide using this step-by-step 
 1. **Replace Static Assets**: Copy all generated PNGs, SVGs, and ICO files into the application's public asset directory.
 2. **Update Core HTML**: Check the main entry point (e.g., `index.html`) and update standard branding tags:
    ```html
-   <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -142,9 +165,14 @@ After generating the assets, integrate them system-wide using this step-by-step 
    ```
 3. **Update Web App Manifest**: Ensure `/site.webmanifest` or `/manifest.json` matches the new sizes, icons, names, and theme colors.
 4. **Update App Layout Components**:
-   - Replace logo and icon files in website headers, navigation bars, login cards, settings screens, and footer sections.
+   - Locate all logo/icon references first:
+     ```bash
+     grep -r "logo\|favicon\|brand" src/ --include="*.tsx" --include="*.jsx" \
+       --include="*.vue" --include="*.html" -l
+     ```
+   - Replace the `src` or `href` values in each file found.
    - **Vector Optimization**: Prefer SVGs over PNGs in layout components.
-   - **Contrast Optimization**: Use monochrome vector variants (e.g., `logo-icon-mono-white.svg`) when the logo is rendered inside a colored theme container (like a gradient header or primary button) to ensure readability.
+   - **Contrast Optimization**: Use `logo-monochrome-white.svg` inside colored containers (gradient headers, primary buttons) for readability.
 5. **Open Graph & SEO metadata**: Update social sharing assets (e.g. `og:image`, `twitter:image`), title tags, meta descriptions, and application metadata.
 
 ---
@@ -152,10 +180,32 @@ After generating the assets, integrate them system-wide using this step-by-step 
 ## 🎨 7. UI/UX Branding Consistency
 
 Ensure a cohesive design system centered around the brand color:
-- **Theme Variables**: Update tailwind/css custom variables (e.g., `--color-primary`, `--accent`, `--primary` HSL tokens) to route to the new primary and secondary hover brand colors.
-- **UI Element Mapping**: Apply the branding consistently to:
-  - Primary buttons, links, and highlights.
-  - Active navigation indicators, border rings, and badges.
-  - Chart colors, loading spinners, and notification banners.
-  - Custom scrollbars.
-- **Verification**: Run build validation commands (e.g. `npm run build` or type checks) and inspect rendering responsiveness across desktop, tablet, and mobile dimensions.
+
+- **Theme Variables**: Update CSS custom properties and Tailwind config to use the new brand color:
+  ```css
+  /* globals.css or index.css */
+  :root {
+    --color-primary: #FF6B00;
+    --color-primary-hover: #E05A00;   /* ~15% darker for hover */
+    --color-primary-fg: #FFFFFF;      /* text on primary bg */
+  }
+  ```
+  ```js
+  // tailwind.config.js
+  theme: { extend: { colors: {
+    primary: 'var(--color-primary)',
+    'primary-hover': 'var(--color-primary-hover)',
+  }}}
+  ```
+
+- **UI Element Mapping** — apply `primary` color to:
+  - Primary buttons: `bg-primary hover:bg-primary-hover`
+  - Active nav indicators, border rings: `border-primary`, `ring-primary`
+  - Badges, highlights, chart accent colors, loading spinners
+
+- **Verification checklist**:
+  ```bash
+  npm run build        # no type errors
+  npm run lint         # no unused class warnings
+  ```
+  Then manually inspect: light mode, dark mode, 320px mobile, 1440px desktop.
