@@ -407,9 +407,11 @@ Adapt to actual project: SPA vs SSR, API path, port, SSL vs no SSL.
 
 ## 11. AI-Friendly Files
 
-For repos developed heavily with AI tools, add these two files. They reduce hallucination and keep AI-generated code consistent.
+Add when: user explicitly requests AI-friendly files, OR repo shows AI tool usage (`.claude/`, `CLAUDE.md`, `.github/copilot*` exist, or AI tool commit authors detected). They reduce hallucination and keep AI-generated code consistent.
 
 ### .github/instructions.md
+
+Add when: user explicitly requests AI-friendly files **or** repo shows AI tool usage (commit authors include Claude/Copilot, `.claude/` or `.github/copilot*` dirs exist, `CLAUDE.md` present).
 
 ```markdown
 # AI Development Rules
@@ -450,15 +452,22 @@ For repos developed heavily with AI tools, add these two files. They reduce hall
 **Step 0 — detect mode and app stack:**
 
 ```bash
-# doc files
-find . -name "*.md" -not -path "./.git/*" -not -path "./superpowers/*" \
-  -not -path "./graphify-out/*" | sort
+# count .md files inside docs/ only (mode detection)
+find . -type f -name "*.md" -path "./docs/*" \
+  -not -path "./superpowers/*" -not -path "./graphify-out/*" | sort
+
+# root-level doc files for awareness (not counted for mode)
+find . -maxdepth 1 -type f -name "*.md" \
+  -not -path "./superpowers/*" -not -path "./graphify-out/*" | sort
 
 # deployment stack detection
-ls docker-compose* Dockerfile* nginx* .env* 2>/dev/null
+find . -type f \( -name "docker-compose*" -o -name "Dockerfile*" \
+  -o -name "nginx*" -o -name ".env*" \) \
+  -not -path "./.git/*" -not -path "./superpowers/*" \
+  -not -path "./graphify-out/*" | sort
 ```
 
-If 3+ doc files exist → **Existing Docs Mode**. Otherwise → **Greenfield Mode**.
+If 1+ `.md` files found inside `docs/` → **Existing Docs Mode**. Otherwise → **Greenfield Mode**.
 
 Deployment example files needed (check stack detection output, all go in `docs/deployment/`):
 - `.env` exists or env vars used → need `docs/deployment/.env.example`
@@ -471,16 +480,27 @@ Deployment example files needed (check stack detection output, all go in `docs/d
 
 Goal: reduce and consolidate — do NOT blindly add new files. **Never delete existing docs.**
 
-1. **Audit** — list every `.md` file in `docs/`; note purpose, size, last-modified
-2. **Merge redundant files** — e.g. `SETUP.md` + `INSTALL.md` → single `docs/development.md`; move originals to `docs/archived/`
-3. **Trim bloated files** — cut prose, walls of text, outdated sections; commands > paragraphs
-4. **Collapse shallow docs/ into README** — if `docs/` has files under ~20 lines each, absorb into README sections instead; move originals to `docs/archived/`
-5. **Rename to standard names** only if content clearly maps (never rename speculatively)
-6. **Archive, never delete** — files that duplicate content or add zero value go to `docs/archived/<original-name>.md`. Create `docs/archived/` if it doesn't exist. Add a one-line comment at the top of each archived file explaining why it was archived and what superseded it.
-7. **Optimize into related docs** — if a file covers a topic partially handled elsewhere, merge its unique content into the existing doc, then archive the source file
-8. **Add missing critical files only** — `VERSION` (if versioning exists but no file), `CHANGELOG.md` (if releases exist), `.github/instructions.md` (if AI-heavy repo), `docs/deployment/` examples if stack detected but examples absent (see Section 10)
-9. Verify all internal links resolve
-10. Report: files merged, trimmed, archived, renamed, added — and **why** for each action
+Steps are sequential — complete each before starting the next.
+
+1. **Audit** — run the commands below; read every file found; note topic, line count, and overlap (same commands/steps appearing in two files = overlap):
+   ```bash
+   find ./docs -type f -name "*.md" | sort
+   wc -l docs/*.md 2>/dev/null
+   ```
+2. **Merge redundant files** — same topic = same commands or steps appear in both files (e.g. `SETUP.md` + `INSTALL.md` both show `npm install`). Different topics = different commands, different audience. When merging: copy all content into target file first, verify nothing lost, then move source to `docs/archived/`.
+3. **Trim bloated files** — files over 100 non-blank lines: cut explanatory paragraphs, keep commands/tables/headers. Do not cut technical steps or commands.
+4. **Collapse tiny files into README** — count non-blank lines: `grep -cv "^[[:space:]]*$" file.md`. If result ≤ 20 and topic fits a README section → absorb into README; move original to `docs/archived/`.
+5. **Rename to standard names** — only if the file's H1 heading directly states the standard name (e.g. `# Development Setup` → `development.md`). Never rename by guessing topic from content.
+6. **Archive, never delete** — absorbed/obsolete files → `docs/archived/<original-name>.md`. Create `docs/archived/` if missing. Before archiving: run `grep -r "<filename>" . --include="*.md"` to find inbound links; update any found links to point to new location. Add at top: `<!-- Archived YYYY-MM-DD: content merged into <target file> -->`.
+7. **Merge partial overlaps** — file covers topic partially handled elsewhere: copy unique content into existing doc, verify no content lost, then archive source.
+8. **Add missing critical files only** — `VERSION` (if versioning exists but no file), `CHANGELOG.md` (if releases exist), `.github/instructions.md` (if AI tools detected per Section 11 rules), `docs/deployment/` examples if stack detected but examples absent (see Section 10).
+9. **Verify links** — find all relative links then confirm each path exists:
+   ```bash
+   grep -roh "\](\.\/[^)]*)" docs/ README.md 2>/dev/null | sed 's/](\.\///' | sed 's/)//'
+   # then for each path found:
+   find . -path "./<path>" | head -1
+   ```
+10. **Report** — one line per file actioned: `[merged|trimmed|archived|renamed|added] <filename> — <why>`
 
 **Reduction rules:**
 - Fewer active files beats complete coverage
@@ -493,15 +513,29 @@ Goal: reduce and consolidate — do NOT blindly add new files. **Never delete ex
 
 ### Greenfield Mode (new or near-empty repo)
 
-1. Create `README.md` — trim to 1–2 pages max
-2. Create `CHANGELOG.md` — Keep a Changelog format
-3. Create `VERSION` — single source of truth
-4. Create deployment examples in `docs/deployment/` based on stack (see Section 10):
-   - `docs/deployment/.env.example` if env vars used
-   - `docs/deployment/docker-compose.yml.example` if Docker used
-   - `docs/deployment/nginx.conf.example` if nginx used
-5. Create `docs/` files only as needed: architecture, development, deployment, configuration, decisions
-6. Create GitHub templates — bug report, feature request, PR template
-7. Add `docs/coding-standards.md` and `.github/instructions.md` if AI tools are used
-8. Verify all internal links resolve
-9. Report: files added, gaps remaining
+Run Step 0 stack detection first. Use its output for steps 4 and 5 below.
+
+1. Create `VERSION` — single source of truth (Section 3)
+2. Create `README.md` — use template from Section 1; read source files to populate (not placeholder text)
+3. Create `CHANGELOG.md` — Keep a Changelog format (Section 2)
+4. Create `docs/` files — run detection commands below; create file only if condition is met:
+
+| File | Detect with | Create if |
+|------|-------------|-----------|
+| `docs/development.md` | `find . -name "Makefile" -o -name "package.json" -o -name "*.sh" \| head -3` | Any runnable entry point found |
+| `docs/architecture.md` | `find . -maxdepth 2 -type d \| wc -l` | 3+ source subdirectories exist |
+| `docs/deployment.md` | Step 0 stack detection output | Docker, cloud config, or server config found |
+| `docs/configuration.md` | `grep -r "os.environ\|process.env\|getenv" . --include="*.py" --include="*.js" --include="*.ts" \| wc -l` | 3+ env var references found |
+| `docs/decisions.md` | Always | Always create — captures future decisions |
+
+5. Create deployment examples from Step 0 stack detection output (see Section 10):
+   - `docs/deployment/.env.example` — if `.env*` files or env var references found
+   - `docs/deployment/docker-compose.yml.example` — if `docker-compose*` or `Dockerfile*` found
+   - `docs/deployment/nginx.conf.example` — if `nginx*` found
+6. Create `.github/` templates — bug report, feature request, PR template
+7. Add `.github/instructions.md` and `docs/coding-standards.md` if AI tools detected (see Section 11) or user requested
+8. **Verify links** — find relative links and confirm each path exists:
+   ```bash
+   grep -roh "\](\.\/[^)]*)" docs/ README.md 2>/dev/null | sed 's/](\.\///' | sed 's/)//'
+   ```
+9. **Report** — one line per file created: `added <filename> — <why>`
