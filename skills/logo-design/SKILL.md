@@ -51,7 +51,7 @@ Every brand identity overhaul must deliver:
 
 ## 🛠️ 4. Programmatic Asset Generation (Python + Pillow)
 
-To generate professional raster assets programmatically, write a Python script that leverages the **Pillow (PIL)** library with a **$4\times$ supersampling mask** to ensure crisp, anti-aliased geometry.
+To generate professional raster assets programmatically, write a Python script that leverages the **Pillow (PIL)** library. The technique draws geometry at 2048×2048 (8–16× larger than the largest output size of 512px) then downsamples with `LANCZOS` — this acts as supersampling, producing crisp anti-aliased edges.
 
 ### Generic Script Template
 You can adapt this pattern to draw custom shapes based on the target application:
@@ -101,11 +101,12 @@ png_icons[192].save(os.path.join(PUBLIC_DIR, "web-app-manifest-192x192.png"), "P
 png_icons[512].save(os.path.join(PUBLIC_DIR, "web-app-manifest-512x512.png"), "PNG", optimize=True)
 
 # Save multi-resolution favicon.ico
+# sizes tuple must match order: base image first (16), then append_images in order (32, 48)
 png_icons[16].save(
     os.path.join(PUBLIC_DIR, "favicon.ico"),
     format="ICO",
     sizes=[(16, 16), (32, 32), (48, 48)],
-    append_images=[png_icons[32], png_icons[48]]
+    append_images=[png_icons[32], png_icons[48]]  # order must match sizes tuple
 )
 
 # 5. GENERATE FULL LOGO WITH TEXT

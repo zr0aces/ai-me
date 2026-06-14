@@ -1,6 +1,8 @@
 ---
 name: date-display-format
 description: Date display standardization to `dd MMM yyyy` format (e.g., `06 Jun 2026`) with a shared formatting utility and client-server timezone synchronization.
+
+trigger: /date-display-format
 ---
 
 # Date Display Format Skill
@@ -64,5 +66,12 @@ def format_date(dt: datetime) -> str:
 
 To prevent inconsistent date rendering between client-side rendering (local timezone) and server-side scanning/briefings:
 1.  **Naive UTC Datetimes:** Store all datetimes in naive UTC format in the database.
-2.  **Explicit Date Bounds:** Anchor date ranges (such as "today's scans") on UTC boundaries, for example, using `app.timeutils.utc_day_start()` rather than server-local or client-local midnights.
+2.  **Explicit Date Bounds:** Anchor date ranges (such as "today's scans") on UTC boundaries using a helper that returns the start of the current UTC day. Implement in `app/timeutils.py` if not already present:
+    ```python
+    from datetime import datetime, timezone
+    def utc_day_start() -> datetime:
+        now = datetime.now(timezone.utc)
+        return now.replace(hour=0, minute=0, second=0, microsecond=0)
+    ```
+    Use `utc_day_start()` rather than server-local or client-local midnights.
 3.  **Client-Side Rendering:** When presenting date bounds on the UI, ensure dates are parsed or formatted explicitly in UTC if they represent market scan dates, or explicitly in client timezone if they represent user-triggered event timestamps.
