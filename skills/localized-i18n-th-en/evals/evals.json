@@ -1,0 +1,48 @@
+{
+  "skill_name": "localized-i18n-th-en",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a React app with no i18n set up. The LoginForm component has hardcoded text: title 'Log in to your account', email label 'Email address', password label 'Password', and a submit button 'Sign in'. Set up react-i18next and replace all the hardcoded strings with translation keys. Support both English and Thai. Default to English.",
+      "expected_output": "i18n config file created, EN and TH locale JSON files with matching keys, LoginForm updated to use useTranslation and t(), and a LanguageSwitcher component provided.",
+      "files": [],
+      "assertions": [
+        "Creates src/i18n.ts or equivalent config file that initialises react-i18next with fallbackLng set to 'en' and supportedLngs including both 'en' and 'th'",
+        "Creates a locale file for English (e.g. public/locales/en/translation.json) containing keys for all 4 hardcoded strings",
+        "Creates a matching locale file for Thai with the same keys and Thai translations",
+        "LoginForm no longer contains raw English string literals inside JSX — uses t('...') calls instead",
+        "Key parity: EN and TH files have identical key sets",
+        "Provides a LanguageSwitcher component or equivalent that can toggle between en and th"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "My Vue 3 app uses Vite and has no i18n. There are hardcoded strings scattered across three components: NavBar.vue ('Dashboard', 'Settings', 'Logout'), DashboardPage.vue ('Welcome back!', 'Total Orders', 'Revenue'), and ProductForm.vue ('Add Product', 'Product Name', 'Price', 'Save', 'Cancel'). Set up vue-i18n with English and Thai support. Use flat dot-notation keys grouped by page/component. Default language should be English.",
+      "expected_output": "vue-i18n installed and configured, flat EN/TH JSON files with all keys, all three components updated to use useI18n and t(), language switcher component provided.",
+      "files": [],
+      "assertions": [
+        "Creates src/i18n/index.ts or equivalent that initialises vue-i18n in Composition API (legacy: false) mode with locale defaulting to 'en'",
+        "Creates src/locales/en.json with flat dot-notation keys for all hardcoded strings from all three components",
+        "Creates src/locales/th.json with matching keys and Thai translations",
+        "NavBar.vue uses t() for all three nav items and imports useI18n",
+        "DashboardPage.vue and ProductForm.vue similarly replace all raw strings with t() calls",
+        "Key parity: en.json and th.json have the same set of keys",
+        "Common strings like Save and Cancel are placed under a common.* namespace and reused rather than duplicated"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We already have react-i18next set up in our Next.js (Pages Router) app. There are locale files at public/locales/en/translation.json and public/locales/th/translation.json. But the dev who built the profile settings page forgot about i18n — ProfileSettings.tsx has hardcoded: heading 'Profile Settings', name field label 'Full Name', email field label 'Email', bio textarea label 'Bio', a save button 'Save Changes', and a success toast 'Profile updated successfully!'. Audit the file, add the missing keys to both locale files, and update ProfileSettings.tsx to use t().",
+      "expected_output": "6 new keys added to both EN and TH locale files, ProfileSettings.tsx updated to use useTranslation and t(), no hardcoded English strings remaining in the component.",
+      "files": [],
+      "assertions": [
+        "Adds exactly the keys needed for the 6 hardcoded strings to public/locales/en/translation.json without removing existing keys",
+        "Adds matching Thai translations for all 6 new keys to public/locales/th/translation.json",
+        "ProfileSettings.tsx imports useTranslation and destructures t from it",
+        "All 6 previously hardcoded strings are replaced with t('...') calls",
+        "No new hardcoded English sentence strings remain in ProfileSettings.tsx",
+        "Key parity maintained: en and th files still have the same set of keys after additions"
+      ]
+    }
+  ]
+}
