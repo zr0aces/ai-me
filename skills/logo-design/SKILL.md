@@ -181,12 +181,12 @@ After generating the assets, integrate them system-wide using this step-by-step 
 
 Ensure a cohesive design system centered around the brand color:
 
-- **Theme Variables**: Update CSS custom properties and Tailwind config to use the new brand color:
+- **Theme Variables**: Update CSS custom properties and Tailwind config to use the new brand color. `#FF6B00` below is a placeholder from §2's worked example — substitute the actual color chosen for this project, never copy it literally:
   ```css
   /* globals.css or index.css */
   :root {
-    --color-primary: #FF6B00;
-    --color-primary-hover: #E05A00;   /* ~15% darker for hover */
+    --color-primary: #FF6B00;         /* replace with this project's chosen primary */
+    --color-primary-hover: #E05A00;   /* ~15% darker than primary, for hover */
     --color-primary-fg: #FFFFFF;      /* text on primary bg */
   }
   ```
