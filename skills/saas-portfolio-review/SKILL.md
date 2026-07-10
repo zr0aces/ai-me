@@ -71,14 +71,14 @@ Configuration is always read from a file. Never accept name, repo path, URLs, or
 
 Check in this order, first match wins:
 
-1. **File path in the prompt.** If the user's prompt contains a file path (e.g. `/saas-portfolio-review ./configs/acme.yaml`, or "use the config at ai/config/acme.yaml"), treat that file as the config source for this run instead of the default `portfolio.yaml`. Resolve the path relative to the current working directory. If the file doesn't exist, report the issue and stop — do not silently fall back to defaults.
-2. **Default location.** Otherwise use `ai/config/portfolio.yaml`.
+1. **File path in the prompt.** If the user's prompt contains a file path (e.g. `/saas-portfolio-review ./configs/acme.yaml`, or "use the config at ./acme.yaml"), treat that file as the config source for this run instead of the default `portfolio.yaml`. Resolve the path relative to the current working directory. If the file doesn't exist, report the issue and stop — do not silently fall back to defaults.
+2. **Default location.** Otherwise use `./portfolio.yaml` in the current working directory.
 
 Whichever file is used, it must supply per repository:
 
 - `name` — repository/product name
 - `repo_path` — repository path
-- `urls` — application URL, login URL, API URL, admin URL (as applicable)
+- `url` — application URL
 - `credentials` — either inline (`username`/`password` per role), or a `credentials_file` path to a separate file (resolved relative to the config file's own directory)
 - Docker Compose file path
 - Available user roles
@@ -91,10 +91,10 @@ If the config file supplies credentials inline, use them directly.
 
 If the config file instead points to `credentials_file`, load it. When no `credentials_file` is given and credentials aren't inline, fall back to checking (first match wins):
 
-1. `ai/config/credentials.local.yaml`
+1. `./credentials.local.yaml` in the current working directory
 2. `.ai/portfolio/credentials.local.yaml`
 
-If both exist, use `ai/config/credentials.local.yaml` and note the conflict in the repository summary so the user can remove the stale file.
+If both exist, use `./credentials.local.yaml` and note the conflict in the repository summary so the user can remove the stale file.
 
 Never hardcode:
 
@@ -108,12 +108,12 @@ If configuration is missing, report the issue and skip that repository.
 
 ## Output Isolation
 
-All generated output — for every repository — lives under `ai/output/`, resolved relative to the **workspace location** declared in the config file (or, if absent, the config file's own directory). **Never write generated review output into the reviewed repository itself.** The reviewed repo is read-only source material; the isolated output directory is the only place this skill writes to.
+All generated output — for every repository — lives under `output/`, resolved relative to the **current working directory at the time the skill is run** (not the config file's location, and not the reviewed repository). **Never write generated review output into the reviewed repository itself.** The reviewed repo is read-only source material; the isolated output directory is the only place this skill writes to.
 
 Each repository gets its own subdirectory, named from a slug of its config `name` (lowercase, hyphens, e.g. "Acme CRM" → `acme-crm`):
 
 ```
-ai/output/
+output/
 ├── portfolio-summary.md
 ├── acme-crm/
 │   ├── portfolio.md
@@ -250,7 +250,7 @@ Capture screenshots per entry. Filename convention:
 Save to the repository's isolated output directory (see [Output Isolation](#output-isolation)):
 
 ```
-ai/output/<repo-slug>/screenshots/
+output/<repo-slug>/screenshots/
 ```
 
 **Fallback — Playwright MCP not configured:** Do not fabricate screenshots or verification results. Mark the repository's verification status as "unverified — Playwright MCP not configured", skip screenshot capture, and continue with steps 5-7 using only static repository review (README, docs, code structure). State this limitation explicitly in the repository summary and in `portfolio-summary.md`.
@@ -301,7 +301,7 @@ Suggest practical improvements per perspective.
 Generate or update, inside the repository's isolated output directory (see [Output Isolation](#output-isolation)):
 
 ```
-ai/output/<repo-slug>/
+output/<repo-slug>/
 ├── portfolio.md
 ├── repository-review.md
 ├── content-review.md
@@ -399,10 +399,10 @@ Print:
 
 After all repositories:
 
-Generate, relative to the workspace location:
+Generate, relative to the current working directory at the time the skill is run:
 
 ```
-ai/output/portfolio-summary.md
+output/portfolio-summary.md
 ```
 
 Include:

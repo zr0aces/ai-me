@@ -1,25 +1,36 @@
 #!/usr/bin/env bash
 # Links all skills from ~/.ai-me/skills/ into each AI tool's skills directory.
 # Tools: Claude, Gemini, Copilot
-# Usage: ./link-skills.sh [--dry-run] [--unlink]
+# Usage: ./link-skills.sh [--dry-run] [--unlink|--clean]
 
 set -euo pipefail
 
 SKILLS_SRC="$HOME/.ai-me/skills"
 DRY_RUN=false
 UNLINK=false
+CLEAN=false
 
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
     --unlink)  UNLINK=true  ;;
+    --clean)   CLEAN=true   ;;
     --help)
-      echo "Usage: link-skills.sh [--dry-run] [--unlink]"
+      echo "Usage: link-skills.sh [--dry-run] [--unlink|--clean]"
       echo "  --dry-run  Show what would be done without making changes"
-      echo "  --unlink   Remove all managed symlinks instead of creating them"
+      echo "  --unlink   Remove symlinks for skills that still exist in $SKILLS_SRC"
+      echo "  --clean    Remove EVERY managed symlink, including ones whose source"
+      echo "             skill was deleted (--unlink can't see those). Run this"
+      echo "             before a plain relink to guarantee no stale links remain:"
+      echo "               link-skills.sh --clean && link-skills.sh"
       exit 0 ;;
   esac
 done
+
+if $UNLINK && $CLEAN; then
+  echo "[link-skills] --unlink and --clean are mutually exclusive" >&2
+  exit 1
+fi
 
 TARGETS=(
   "$HOME/.claude/skills"
@@ -37,6 +48,42 @@ ok()     { echo "  ✓ $*"; }
 skip()   { echo "  - $*"; }
 err()    { echo "  ✗ $*" >&2; }
 drylog() { echo "  ~ (dry-run) $*"; }
+
+if $CLEAN; then
+  for target_dir in "${TARGETS[@]}"; do
+    tool=$(basename "$(dirname "$target_dir")" | sed 's/^\.//')
+    log "── $tool → $target_dir"
+
+    [ -d "$target_dir" ] || { skip "$target_dir does not exist"; echo; continue; }
+
+    for link in "$target_dir"/*; do
+      [ -L "$link" ] || continue
+      link_name=$(basename "$link")
+      # resolve() falls back to the raw readlink target for broken/relative
+      # symlinks that `realpath -e` would otherwise refuse to resolve.
+      resolved=$(realpath -e "$link" 2>/dev/null || readlink "$link")
+      case "$resolved" in
+        "$SKILLS_SRC"/*)
+          if $DRY_RUN; then
+            drylog "would remove $link_name"
+          else
+            rm "$link"
+            ok "removed $link_name"
+            ((removed++)) || true
+          fi
+          ;;
+        *)
+          skip "$link_name (not a managed symlink, skipping)"
+          ((skipped++)) || true
+          ;;
+      esac
+    done
+    echo
+  done
+
+  log "clean done — removed: $removed, skipped: $skipped"
+  exit 0
+fi
 
 for target_dir in "${TARGETS[@]}"; do
   tool=$(basename "$(dirname "$target_dir")" | sed 's/^\.//')
