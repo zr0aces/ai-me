@@ -74,27 +74,48 @@ Check in this order, first match wins:
 1. **File path in the prompt.** If the user's prompt contains a file path (e.g. `/saas-portfolio-review ./configs/acme.yaml`, or "use the config at ./acme.yaml"), treat that file as the config source for this run instead of the default `portfolio.yaml`. Resolve the path relative to the current working directory. If the file doesn't exist, report the issue and stop — do not silently fall back to defaults.
 2. **Default location.** Otherwise use `./portfolio.yaml` in the current working directory.
 
-Whichever file is used, it must supply per repository:
+The config file's shape:
 
-- `name` — repository/product name
-- `repo_path` — repository path
-- `url` — application URL
-- `credentials` — either inline (`username`/`password` per role), or a `credentials_file` path to a separate file (resolved relative to the config file's own directory)
-- Docker Compose file path
-- Available user roles
+```yaml
+workspace: /home/san/workspace
 
-A user-supplied config file may hold one repository or a list (same shape as `portfolio.yaml`'s repository entries).
+repositories:
+  HausVis:
+    path: /home/san/workspace/HausVis/
+    application:
+      url: https://dhvis.zerotrust.in.th/th/t/rp103/login
+    credential_profile: hausvis
+```
+
+- `workspace` — base path repos resolve against when a repository's `path` is relative. If a repository's `path` is absolute, `workspace` is ignored for that entry.
+- `repositories` — a map keyed by repository/product name (e.g. `HausVis`). The key **is** the name — there is no separate `name` field. Each entry supplies:
+  - `path` — repository path, absolute or relative to `workspace`
+  - `application.url` — application URL
+  - `credential_profile` — name of a credential profile to resolve (see [Credentials](#credentials)); omit if the app needs no login
+  - Docker Compose file path (optional key, e.g. `compose_file`, if it can't be inferred from `path`)
+  - Available user roles (optional, when the app has more than one login role to verify)
+
+A user-supplied config file may hold one repository entry or the full `repositories` map (same shape as `portfolio.yaml`).
 
 ## Credentials
 
-If the config file supplies credentials inline, use them directly.
-
-If the config file instead points to `credentials_file`, load it. When no `credentials_file` is given and credentials aren't inline, fall back to checking (first match wins):
+Each repository entry references credentials by name via `credential_profile`, never inline. Resolve the profile by loading a credentials file and looking up that profile name, checking in this order (first match wins):
 
 1. `./credentials.local.yaml` in the current working directory
 2. `.ai/portfolio/credentials.local.yaml`
 
 If both exist, use `./credentials.local.yaml` and note the conflict in the repository summary so the user can remove the stale file.
+
+The credentials file is a map of profile name to credentials, e.g.:
+
+```yaml
+profiles:
+  hausvis:
+    username: ...
+    password: ...
+```
+
+A profile may hold a single `username`/`password` pair, or nest credentials per role when a repository declares multiple roles. If a repository sets `credential_profile` but the named profile isn't found in either file, report the issue and skip that repository — do not fall back to guessed or empty credentials.
 
 Never hardcode:
 
@@ -110,7 +131,7 @@ If configuration is missing, report the issue and skip that repository.
 
 All generated output — for every repository — lives under `output/`, resolved relative to the **current working directory at the time the skill is run** (not the config file's location, and not the reviewed repository). **Never write generated review output into the reviewed repository itself.** The reviewed repo is read-only source material; the isolated output directory is the only place this skill writes to.
 
-Each repository gets its own subdirectory, named from a slug of its config `name` (lowercase, hyphens, e.g. "Acme CRM" → `acme-crm`):
+Each repository gets its own subdirectory, named from a slug of its `repositories` map key (lowercase, hyphens, e.g. `HausVis` → `hausvis`):
 
 ```
 output/
@@ -159,13 +180,11 @@ Read credentials per [Credentials](#credentials).
 
 Resolve:
 
-- Repository name
-- Repository path
+- Repository name (the `repositories` map key)
+- Repository path (absolute, or resolved against `workspace` if relative)
 - Docker Compose file
-- Frontend URL
-- Backend URL
-- API URL
-- Login credentials
+- Application URL (`application.url`)
+- Login credentials (via `credential_profile`, see [Credentials](#credentials))
 
 ---
 
