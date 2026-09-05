@@ -237,6 +237,8 @@ Use Playwright MCP (see [Agent Compatibility](#agent-compatibility)).
 
 Login using configured credentials.
 
+- **Scope & Excluded Portals**: Do NOT review Global Admin login or Global Admin dashboard pages (e.g., `/globaladmin`, `/admin` bootstrap routes). Verification is strictly scoped to tenant-level roles and configured application entry points. Global Admin infrastructure has no access in tenant deployments and must be omitted entirely from verification flows (do not record as skipped or failed).
+
 Walk the application in this order. This sequence doubles as the **verified flow** downstream agents can turn into a demo script, so keep the order and record every step:
 
 1. Login
@@ -261,7 +263,13 @@ For each step, record a **verified flow entry**:
 - Screenshot filename
 - One-sentence description of what it demonstrates, tied back to a [key benefit](#key-benefits) where possible
 
-Capture screenshots per entry. Filename convention:
+Capture screenshots per entry. **Capture full-page by default** — call the Playwright MCP screenshot tool with `fullPage: true` (`mcp__playwright__browser_take_screenshot` in Claude Code; the equivalent full-page flag in other agents). A viewport-only shot cuts off content below the fold, and portfolio pages need the whole page — a dashboard cropped at 800px hides the very modules the screenshot is meant to evidence.
+
+This holds for the mobile layout step too — resize the viewport, then still capture full-page, so the responsive stack is visible end to end.
+
+One exception: when the entry is about **a single component** (a specific modal, chart, or error state), an element-scoped screenshot is fine. Say so in the description, so a downstream agent knows it isn't a full page.
+
+Filename convention:
 
 - Single-role app: `kebab-case-page-state.png`, e.g. `dashboard-dark-mode.png`
 - Multi-role app: `role-page-state.png`, e.g. `admin-dashboard-dark-mode.png` — the role prefix is required so the same page verified under two roles never collides on disk
@@ -461,3 +469,4 @@ Never:
 - Save a screenshot without its caption/description.
 - Delete existing documentation.
 - Report a verified score for a repository that used the Playwright-MCP-not-configured fallback.
+- Review or attempt to verify Global Admin login or Global Admin dashboard pages (no access / out of scope).
