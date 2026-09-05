@@ -65,17 +65,27 @@ Pins usually encode a bug someone already hit. If you can't find the reason, lea
 
 ## 3. Apply the in-major upgrades
 
-Most in-major upgrades need no `package.json` edit at all. A `^1.2.0` range already permits `1.9.0`, so the upgrade lives entirely in the lockfile:
+Bump both `package.json` and the lockfile. A `^1.2.0` range already permits `1.9.0`, so `npm update` alone moves the lockfile and leaves the manifest advertising a floor two years stale — the next person reading `package.json` has no idea what the project actually runs on, and a fresh `npm install` on a different machine can resolve something older.
+
+Install each package at its new version by name; that rewrites the manifest range and the lockfile in one step:
 
 ```bash
-npm update            # or: pnpm update / yarn up / bun update
+npm install pkg-a@1.9.0 pkg-b@4.3.2          # deps
+npm install -D pkg-c@6.1.0                    # devDeps, keeps the section
+# pnpm add / yarn add / bun add take the same pkg@version form
 ```
 
-Edit `package.json` only when `latest` falls **outside** the existing range — a `~1.2.0` that needs `1.9.0`, or an exact pin you've been asked to move. Rewriting ranges that already permit the new version produces a diff full of churn that reviewers have to read and learn nothing from.
+Pass every in-major target in one command per section (`dependencies`, `devDependencies`) so the tree resolves once. `npm install pkg@x` writes the caret range `^x` by default — fine when the file already uses carets. Otherwise:
 
-When you do edit, preserve the range style the file already uses (`^`, `~`, exact). Matching the file's existing convention matters more than your preference — a repo that pins exact versions did it on purpose.
+- **Tilde repo** (`~1.2.0`): edit the range by hand to `~1.9.0`, then plain `npm install` to regenerate the lockfile.
+- **Exact-pin repo** (`1.2.0`, no prefix): a repo that pins exact versions did it on purpose. Write the bare version and use `--save-exact` (`npm install --save-exact pkg@1.9.0`).
+- **Workspaces**: run the install in each workspace that declares the package, at the same version everywhere.
 
-Then regenerate the lockfile with a normal install (`npm install`, `pnpm install`, `yarn`, `bun install`), not `--force` and not a hand-edited lockfile.
+Matching the file's existing range style matters more than your preference — never convert a repo from exact pins to carets as a side effect of a bump.
+
+Leave `overrides` / `resolutions` / `pnpm.overrides` entries alone unless the pin's reason is gone; those are deliberate (step 2).
+
+Regenerate the lockfile only with a normal install — never `--force`, never a hand-edited lockfile.
 
 Watch for these while installing:
 
