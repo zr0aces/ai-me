@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Links all skills from ~/.ai-me/skills/ into each AI tool's skills directory.
-# Tools: Claude, Gemini, Copilot
+# Tools: Claude, Gemini, Copilot, Codex, Omp
 # Usage: ./link-skills.sh [--dry-run] [--unlink|--clean]
 
 set -euo pipefail
@@ -36,6 +36,8 @@ TARGETS=(
   "$HOME/.claude/skills"
   "$HOME/.gemini/skills"
   "$HOME/.copilot/skills"
+  "$HOME/.codex/skills"
+  "$HOME/.omp/skills"
 )
 
 linked=0

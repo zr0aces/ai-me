@@ -23,7 +23,7 @@
     ```
 
 3.  **Link skills to agent configurations**:
-    Execute the linking script to sync the skills to your local AI tool folders (e.g., Claude, Gemini, Copilot):
+    Execute the linking script to sync the skills to your local AI tool folders (e.g., Claude, Gemini, Copilot, Codex, Omp):
     ```bash
     ./scripts/link-skills.sh
     ```
